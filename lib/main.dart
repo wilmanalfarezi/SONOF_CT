@@ -1,10 +1,14 @@
+import 'package:Sonof/widget/switch_container.dart';
 import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 //import 'package:flutter/foundation.dart';
 
 void main() {
-  runApp(MqttApp());
+  runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: MqttApp(),
+  ));
 }
 
 class MqttApp extends StatefulWidget {
@@ -16,15 +20,19 @@ final client = MqttServerClient('free.mqtt.iyoti.id', '');
 
 class _MqttAppState extends State<MqttApp> {
   late MqttServerClient client;
-  final String mqttServer = 'free.mqtt.iyoti.id';
-  final int mqttPort = 1883;
-  final String mqttUsername = ''; // Jika diperlukan boleh digunakan
+  String mqttServer = 'free.mqtt.iyoti.id';
+  int mqttPort = 1883;
+  String mqttUsername = ''; // Jika diperlukan boleh digunakan
   final String mqttPassword = ''; // Jika diperlukan boleh digunakan
 
+  bool isConnected = false;
   bool isButton1Pressed = false;
   bool isButton2Pressed = false;
   bool isButton3Pressed = false;
   bool isButton4Pressed = false;
+
+  final serverController = TextEditingController();
+  final portController = TextEditingController();
 
   @override
   void initState() {
@@ -57,11 +65,14 @@ class _MqttAppState extends State<MqttApp> {
 
     try {
       await client.connect();
+      isConnected = true;
       print('Terkoneksi ke MQTT broker');
       // Lakukan sesuatu setelah terhubung ke broker MQTT
     } catch (e) {
+      isConnected = false;
       print('Koneksi gagal: $e');
     }
+    setState(() {});
   }
 
   void onConnected() {
@@ -69,6 +80,7 @@ class _MqttAppState extends State<MqttApp> {
   }
 
   void onDisconected() {
+    isConnected = false;
     print('MQTT_LOGS:: Disconnected');
   }
 
@@ -162,35 +174,177 @@ class _MqttAppState extends State<MqttApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MQTT App',
+      debugShowCheckedModeBanner: false,
+      title: 'Rigging Control System',
       home: Scaffold(
         appBar: AppBar(
-          title: Text('MQTT App'),
+          title: Text('Rigging Control System'),
         ),
         body: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Switch(
-                value: isButton1Pressed,
-                onChanged: toggleButton1,
+              Padding(
+                padding: const EdgeInsets.all(15),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("MQTT SERVER: $mqttServer"),
+                        Text("MQTT PORT: $mqttPort"),
+                        Text(isConnected ? "Terkoneksi" : "Tidak Terkoneksi"),
+                      ],
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        testAlert(context);
+                      },
+                      style:
+                          TextButton.styleFrom(foregroundColor: Colors.orange),
+                      child: Text(
+                        "UBAH",
+                        selectionColor: Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              Switch(
-                value: isButton2Pressed,
-                onChanged: toggleButton2,
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 15, right: 15),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SwitchContainer(
+                          onChanged: toggleButton1,
+                          value: isButton1Pressed,
+                          label: "Relay 1",
+                          title: "Naik",
+                          isActive: isButton1Pressed,
+                        ),
+                        Spacer(),
+                        SwitchContainer(
+                          onChanged: toggleButton2,
+                          value: isButton2Pressed,
+                          label: "Relay 2",
+                          title: "Turun",
+                          isActive: isButton2Pressed,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(15.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SwitchContainer(
+                          onChanged: toggleButton3,
+                          value: isButton3Pressed,
+                          label: "Relay 3",
+                          title: "Maju",
+                          isActive: isButton3Pressed,
+                        ),
+                        Spacer(),
+                        SwitchContainer(
+                          onChanged: toggleButton4,
+                          value: isButton4Pressed,
+                          label: "Relay 4",
+                          title: "Mundur",
+                          isActive: isButton4Pressed,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              Switch(
-                value: isButton3Pressed,
-                onChanged: toggleButton3,
-              ),
-              Switch(
-                value: isButton4Pressed,
-                onChanged: toggleButton4,
-              ),
+              Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 40),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      height: 60,
+                      width: 60,
+                      child: Image.asset("assets/Logo.png"),
+                    ),
+                    Text("Museum Nasional Indonesia")
+                  ],
+                ),
+              )
             ],
           ),
         ),
       ),
+    );
+  }
+
+  void testAlert(BuildContext context) {
+    serverController.text = mqttServer;
+    portController.text = mqttPort.toString();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          scrollable: true,
+          title: Text('Ubah'),
+          content: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Form(
+              child: Column(
+                children: <Widget>[
+                  TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'MQTT SERVER',
+                    ),
+                    controller: serverController,
+                  ),
+                  TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'MQTT PORT',
+                    ),
+                    controller: portController,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            Row(
+              children: [
+                ElevatedButton(
+                  child: Text("Submit"),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                  ),
+                  onPressed: () {
+                    mqttServer = serverController.text;
+                    mqttPort = int.parse(portController.text);
+                    connectToMqttBroker();
+                    setState(() {});
+                    Navigator.pop(context, true);
+                  },
+                ),
+                Spacer(),
+                ElevatedButton(
+                  child: Text("Batalkan"),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                  },
+                ),
+              ],
+            )
+          ],
+        );
+      },
     );
   }
 }
