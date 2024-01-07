@@ -1,4 +1,4 @@
-package com.example.asu
+package com.example.sonof
 
 import io.flutter.embedding.android.FlutterActivity
 
